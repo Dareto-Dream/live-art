@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>LiveArt Interface</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #121212;
+      color: white;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .tabs {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 20px;
+    }
+
+    .tab {
+      padding: 10px 20px;
+      margin: 0 5px;
+      cursor: pointer;
+      background: #333;
+      border-radius: 6px;
+    }
+
+    .tab.active {
+      background: #1DB954;
+    }
+
+    .tab-content {
+      display: none;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    .playlist-btn {
+      margin: 8px;
+      padding: 12px 24px;
+      background-color: #1DB954;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+
+    .controls button {
+      margin: 8px;
+      padding: 12px 18px;
+      font-size: 14px;
+      background-color: #282828;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 60%;
+      border-radius: 6px;
+      border: none;
+      font-size: 16px;
+    }
+
+    button.search-btn {
+      padding: 10px 20px;
+      font-size: 16px;
+      margin-left: 10px;
+      background-color: #1DB954;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>LiveArt Interface</h1>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('music')">Spotify Panel</div>
+    <div class="tab" onclick="switchTab('search')">Reference Search</div>
+  </div>
+
+  <div id="music" class="tab-content active">
+    <h3>Select a Playlist</h3>
+    <button class="playlist-btn" onclick="playPlaylist('spotify:playlist:YOUR_PLAYLIST_URI_1')">Vibe Session</button>
+    <button class="playlist-btn" onclick="playPlaylist('spotify:playlist:YOUR_PLAYLIST_URI_2')">Focus Beats</button>
+    <button class="playlist-btn" onclick="playPlaylist('spotify:playlist:YOUR_PLAYLIST_URI_3')">Night Flow</button>
+    <button class="playlist-btn" onclick="playPlaylist('liked')">Liked Songs</button>
+
+    <div class="cover">
+      <img id="albumCover" src="" alt="Album Cover" width="280" />
+      <h2 id="trackName">Track Name</h2>
+      <h4 id="artistName">Artist Name</h4>
+    </div>
+
+    <div class="controls">
+      <button onclick="spotifyAction('previous')">Previous</button>
+      <button onclick="spotifyAction('pause')">Play/Pause</button>
+      <button onclick="spotifyAction('next')">Next</button>
+      <button onclick="spotifyAction('toggle_shuffle')">Shuffle</button>
+      <button onclick="spotifyAction('toggle_repeat')">Repeat</button>
+    </div>
+  </div>
+
+  <div id="search" class="tab-content">
+    <h3>Search for Image References</h3>
+    <input type="text" id="searchQuery" placeholder="e.g. hand anatomy, cyberpunk hat" />
+    <button class="search-btn" onclick="doSearch()">Search</button>
+  </div>
+
+  <script>
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+
+      document.getElementById(tabId).classList.add('active');
+      event.target.classList.add('active');
+    }
+
+    function playPlaylist(uri) {
+      fetch("/spotify", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: "play_playlist", uri })
+      });
+    }
+
+    function spotifyAction(action) {
+      fetch("/spotify", {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      });
+    }
+
+    function updateNowPlaying() {
+      fetch("/spotify/status")
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("trackName").textContent = data.name || "Unknown Track";
+          document.getElementById("artistName").textContent = data.artist || "Unknown Artist";
+          document.getElementById("albumCover").src = data.cover || "";
+        });
+    }
+
+    function doSearch() {
+      const query = document.getElementById("searchQuery").value;
+      if (query.trim()) {
+        const url = `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(query)}`;
+        window.open(url, "_blank");
+      }
+    }
+
+    setInterval(updateNowPlaying, 5000);
+  </script>
+</body>
+</html>

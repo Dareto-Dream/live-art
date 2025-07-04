@@ -1,0 +1,6 @@
+flask
+spotipy
+onnxruntime
+opencv-python
+numpy
+python-dotenv
