@@ -62,7 +62,7 @@ pip install -r requirements.txt
 python app.py
 ```
 
-Then open your browser to ||http://localhost:5000||.
+Then open your browser to `http://localhost:5000`.
 
 
 ## 📚 Reference Image Search
