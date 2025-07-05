@@ -1,11 +1,22 @@
 # detector.py
 
+"""Helpers for sending frames to an external AI detection service."""
+
+import os
+import requests
+
 import numpy as np
 import cv2
-import mss
+try:
+    import mss
+except ImportError:  # optional when using remote detection
+    mss = None
 
 CONFIRMATION_FRAMES = 2
 false_count = 0
+
+# Remote AI endpoint (e.g. http://jetson.local:5000/detect)
+AI_MODEL_URL = os.getenv("AI_MODEL_URL")
 
 # Define the screen region where the Jetson stream is shown
 # You must customize this to your monitor layout
@@ -16,8 +27,12 @@ MONITOR_REGION = {
     "height": 480    # Height of the stream window
 }
 
-def detect_drawing():
+def detect_screenshot():
     global false_count
+    if mss is None:
+        print("[detector] mss not available for screenshot detection")
+        return False
+
     with mss.mss() as sct:
         frame = np.array(sct.grab(MONITOR_REGION))
 
@@ -42,4 +57,27 @@ def detect_drawing():
             print(f"[detector] 🕓 Holding... ({false_count})")
             return True
         print(f"[detector] ❌ No detection (pixels={green_pixels})")
+        return False
+
+
+def detect_drawing(frame_bytes: bytes | None) -> bool:
+    """Send the provided frame to the remote AI model for detection."""
+    if frame_bytes is None:
+        return False
+
+    if not AI_MODEL_URL:
+        # Fallback to screenshot-based detection if no remote URL provided
+        return detect_screenshot()
+
+    try:
+        resp = requests.post(
+            AI_MODEL_URL,
+            files={"frame": ("frame.jpg", frame_bytes, "image/jpeg")},
+            timeout=2,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return bool(data.get("drawing"))
+    except Exception as e:
+        print(f"[detector] Error contacting AI server: {e}")
         return False

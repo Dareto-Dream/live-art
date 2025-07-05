@@ -81,6 +81,9 @@
 
   <h1>LiveArt Interface</h1>
 
+  <video id="webcam" width="320" height="240" autoplay muted style="display:none"></video>
+  <canvas id="frameCanvas" width="320" height="240" style="display:none"></canvas>
+
   <div class="tabs">
     <div class="tab active" onclick="switchTab('music')">Spotify Panel</div>
     <div class="tab" onclick="switchTab('search')">Reference Search</div>
@@ -158,6 +161,26 @@
     }
 
     setInterval(updateNowPlaying, 5000);
+
+    // === Webcam streaming ===
+    const video = document.getElementById('webcam');
+    const canvas = document.getElementById('frameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    navigator.mediaDevices.getUserMedia({ video: true }).then(stream => {
+      video.srcObject = stream;
+    });
+
+    function sendFrame() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      canvas.toBlob(blob => {
+        const fd = new FormData();
+        fd.append('frame', blob, 'frame.jpg');
+        fetch('/frame', { method: 'POST', body: fd });
+      }, 'image/jpeg');
+    }
+
+    setInterval(sendFrame, 500);
   </script>
 </body>
 </html>

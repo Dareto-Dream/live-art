@@ -77,3 +77,10 @@ Powered by:
 - Mobile control panel
 
 Made with ❤️ for artists who work better with vibes.
+
+### Webcam Streaming
+
+Set the `AI_MODEL_URL` environment variable to the URL of your detection server.
+When running, the web interface will capture webcam frames and send them to this
+endpoint. The response should be JSON with a `drawing` flag used to control
+Spotify playback.
