@@ -15,6 +15,10 @@ drawing_active = False
 last_trigger_time = 0
 TRIGGER_COOLDOWN = 10  # seconds
 
+# Latest webcam frame sent from the browser
+latest_frame = None
+frame_lock = threading.Lock()
+
 # === Detection Thread ===
 def monitor_drawing():
     global drawing_active, last_trigger_time
@@ -24,7 +28,10 @@ def monitor_drawing():
     music_playing = False
 
     while True:
-        detected = detector.detect_drawing()
+        with frame_lock:
+            frame = latest_frame
+
+        detected = detector.detect_drawing(frame)
         now = time.time()
 
         if detected:
@@ -74,6 +81,17 @@ def control_spotify():
             return jsonify({"error": "Unknown action"}), 400
 
     return jsonify({"status": "ok"})
+
+@app.route("/frame", methods=["POST"])
+def receive_frame():
+    """Receive a frame from the browser webcam."""
+    global latest_frame
+    file = request.files.get("frame")
+    if not file:
+        return jsonify({"error": "no frame"}), 400
+    with frame_lock:
+        latest_frame = file.read()
+    return jsonify({"status": "received"})
 
 @app.route("/status")
 def status():
